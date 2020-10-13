@@ -1,10 +1,35 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
+require 'date'
 require 'xero_exporter/export'
 
 describe XeroExporter::Export do
   subject(:export) { described_class.new }
+
+  context '#reference' do
+    it 'contains nothing when not specified' do
+      expect(export.reference).to eq '--'
+    end
+
+    it 'contains the date' do
+      export.date = Date.new(2020, 3, 12)
+      expect(export.reference).to eq '20200312--'
+    end
+
+    it 'contains the currency' do
+      export.date = Date.new(2020, 3, 12)
+      export.currency = 'gbp'
+      expect(export.reference).to eq '20200312-GBP-'
+    end
+
+    it 'contains the ID' do
+      export.date = Date.new(2020, 3, 12)
+      export.currency = 'gbp'
+      export.id = 'someid'
+      expect(export.reference).to eq '20200312-GBP-someid'
+    end
+  end
 
   context '#invoices' do
     it 'is an array of invoices' do

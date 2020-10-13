@@ -7,6 +7,7 @@ require 'xero_exporter/refund'
 module XeroExporter
   class Export
 
+    attr_accessor :id
     attr_accessor :date
     attr_accessor :currency
 
@@ -18,6 +19,10 @@ module XeroExporter
       @invoices = []
       @payments = []
       @refunds = []
+    end
+
+    def reference
+      "#{@date&.strftime('%Y%m%d')}-#{@currency&.upcase}-#{@id}"
     end
 
     def add_invoice
