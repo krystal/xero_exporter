@@ -15,6 +15,14 @@ export.date = Date.today
 # Specify the currency that you're exporting transactions for
 export.currency = 'GBP'
 
+# Specify the ID for this export (for use in references)
+export.id = '12345'
+
+# Specify the name of the contact that should be used on any
+# invoices that are generated. A contact will be found or created
+# as appropriate.
+export.invoice_contact_name = 'Generic Customer'
+
 # You can then add all the invoices that you raised on this day to
 # the export. It's important to ensure that you categorise the tax
 # element on this as that forms a key part of the export.

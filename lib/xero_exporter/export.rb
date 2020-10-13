@@ -10,6 +10,7 @@ module XeroExporter
     attr_accessor :id
     attr_accessor :date
     attr_accessor :currency
+    attr_accessor :invoice_contact_name
 
     attr_reader :invoices
     attr_reader :payments
