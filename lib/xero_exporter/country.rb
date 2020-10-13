@@ -9,6 +9,10 @@ module XeroExporter
       @code = code
     end
 
+    def to_s
+      @code
+    end
+
     def eql?(other)
       @code == other.code
     end

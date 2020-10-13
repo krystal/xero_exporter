@@ -9,6 +9,7 @@ module XeroExporter
 
     attr_accessor :id
     attr_accessor :number
+    attr_accessor :type
     attr_writer :country
     attr_writer :tax_rate
     attr_writer :tax_type
@@ -16,6 +17,7 @@ module XeroExporter
     attr_reader :lines
 
     def initialize
+      @type = :invoice
       @lines = []
       @tax_type = :normal
     end

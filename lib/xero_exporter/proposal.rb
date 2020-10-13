@@ -12,15 +12,15 @@ module XeroExporter
     #
     # @return [Hash]
     def invoice_lines
-      export_lines = Hash.new { |h, k| h[k] = { amount: 0.0, tax: 0.0 } }
-      @export.invoices.each do |invoice|
-        invoice.lines.each do |line|
-          key = [line.account_code, invoice.country, invoice.tax_rate]
-          export_lines[key][:amount] += line.amount || 0.0
-          export_lines[key][:tax] += line.tax || 0.0
-        end
-      end
-      export_lines
+      get_invoice_lines_from_invoices(@export.invoices.select { |i| i.type == :invoice })
+    end
+
+    # Returns an array of lines which need to be included on the credit note that will
+    # be generated in Xero.
+    #
+    # @return [Hash]
+    def credit_note_lines
+      get_invoice_lines_from_invoices(@export.invoices.select { |i| i.type == :credit_note })
     end
 
     # Return the total number of payments per bank account which
@@ -47,6 +47,20 @@ module XeroExporter
         export_refunds[key][:fees] += refund.fees || 0.0
       end
       export_refunds
+    end
+
+    private
+
+    def get_invoice_lines_from_invoices(invoices)
+      export_lines = Hash.new { |h, k| h[k] = { amount: 0.0, tax: 0.0 } }
+      invoices.each do |invoice|
+        invoice.lines.each do |line|
+          key = [line.account_code, invoice.country, invoice.tax_rate]
+          export_lines[key][:amount] += line.amount || 0.0
+          export_lines[key][:tax] += line.tax || 0.0
+        end
+      end
+      export_lines
     end
 
   end

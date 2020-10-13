@@ -18,6 +18,17 @@ export.currency = 'GBP'
 # Specify the ID for this export (for use in references)
 export.id = '12345'
 
+# Specify the names for any payment providers mapped to the
+# ID of the their bank accounts used for payments & refunds
+export.payment_providers['010'] = 'Stripe'
+
+# Specify the code for the receiveables account
+export.receivables_account = '020'
+
+# Specify the codes for the fee accounts associated with bank
+# accounts
+export.fee_accounts['010'] = '404'
+
 # Specify the name of the contact that should be used on any
 # invoices that are generated. A contact will be found or created
 # as appropriate.
