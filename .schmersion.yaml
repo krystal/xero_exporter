@@ -3,7 +3,8 @@
 # This is an array of all the commit types that are supported. You can
 # override this to define your own set as needed per-project.
 #
-# types: [feat, fix, style, chore, test, refactor, perf, docs, ci, build, revert]
+types:
+  [feat, fix, style, chore, test, refactor, perf, docs, ci, build, revert, wip]
 #
 # By default, you can use any scope (the word in brackets following the type).
 # If you wish to restrict this, you can define a list of valid scopes.
