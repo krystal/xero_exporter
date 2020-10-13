@@ -61,6 +61,74 @@ module XeroExporter
         end
       end
     end
+
+    context '#payments' do
+      context 'with an example set of data' do
+        before do
+          export = Export.new
+          export.add_payment do |p|
+            p.amount = 10
+            p.fees = 0.50
+            p.bank_account = '010'
+          end
+          export.add_payment do |p|
+            p.amount = 50
+            p.fees = 2.0
+            p.bank_account = '010'
+          end
+          export.add_payment do |p|
+            p.amount = 10
+            p.fees = 0.50
+            p.bank_account = '020'
+          end
+
+          @proposal = Proposal.new(export)
+          @payments = @proposal.payments
+        end
+
+        it 'returns a hash grouped by account, country and tax' do
+          expect(@payments['010'][:amount]).to eq 60
+          expect(@payments['010'][:fees]).to eq 2.5
+
+          expect(@payments['020'][:amount]).to eq 10
+          expect(@payments['020'][:fees]).to eq 0.50
+        end
+      end
+    end
+
+    context '#refunds' do
+      context 'with an example set of data' do
+        before do
+          export = Export.new
+          export.add_refund do |p|
+            p.amount = 10
+            p.fees = 0.50
+            p.bank_account = '010'
+          end
+          export.add_refund do |p|
+            p.amount = 50
+            p.fees = 2.0
+            p.bank_account = '010'
+          end
+          export.add_refund do |p|
+            p.amount = 10
+            p.fees = 0.50
+            p.bank_account = '020'
+          end
+
+          @proposal = Proposal.new(export)
+          @refunds = @proposal.refunds
+        end
+
+        it 'returns a hash grouped by account, country and tax' do
+          expect(@refunds['010'][:amount]).to eq 60
+          expect(@refunds['010'][:fees]).to eq 2.5
+
+          expect(@refunds['020'][:amount]).to eq 10
+          expect(@refunds['020'][:fees]).to eq 0.50
+        end
+      end
+    end
   end
 
 end
