@@ -73,10 +73,12 @@ module XeroExporter
       run_task :create_credit_note do
         line_items = create_xero_line_items(@proposal.credit_note_lines)
         if line_items.empty?
+          logger.debug 'Not creating a credit note because there are no lines'
           current_state[:status] = 'not required because no credit note lines'
           return false
         end
 
+        logger.debug 'Creating new credit note'
         spec = {
           'Type' => 'ACCRECCREDIT',
           'Contact' => {
@@ -90,6 +92,8 @@ module XeroExporter
         }
 
         credit_note = @api.post('CreditNotes', spec)['CreditNotes'].first
+
+        logger.debug "Credit note created with ID #{credit_note['CreditNoteID']} for #{credit_note['RemainingCredit']}"
         current_state[:credit_note_id] = credit_note['CreditNoteID']
         current_state[:amount] = credit_note['RemainingCredit']
       end
@@ -169,10 +173,16 @@ module XeroExporter
     # @return [void]
     def create_credit_note_payment
       run_task :create_credit_note_payment do
-        return if state[:create_credit_note][:amount].nil?
-        return unless state[:create_credit_note][:amount].positive?
+        if state[:create_credit_note].nil?
+          raise Error, 'create_credit_note task must be executed before this action'
+        end
 
-        logger.debug "Creating payment for credit note #{state[:create_credit_note][:credit_note_id]}" \
+        if state[:create_credit_note][:amount].nil? || !state[:create_credit_note][:amount].positive?
+          logger.debug 'Not adding a payment because the amount is not present or not positive'
+          return
+        end
+
+        logger.debug "Creating payment for credit note #{state[:create_credit_note][:credit_note_id]} " \
                         "for #{state[:create_credit_note][:amount]}"
         logger.debug "Using receivables account: #{@export.receivables_account}"
 

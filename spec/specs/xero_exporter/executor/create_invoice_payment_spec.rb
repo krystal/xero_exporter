@@ -14,11 +14,11 @@ describe XeroExporter::Executor do
       }
 
       executor, state = create_executor(initial_state: initial_state) do |e, api|
-        expect(api).to receive(:put).with('Payments', anything) do |path, params|
+        expect(api).to receive(:put).with('Payments', anything) do |_, params|
           expect(params.dig('Account', 'Code')).to eq e.receivables_account
           expect(params.dig('Invoice', 'InvoiceID')).to eq 'abcdef'
-          expect(params.dig('Amount')).to eq 500.0
-          expect(params.dig('Reference')).to eq e.reference
+          expect(params['Amount']).to eq 500.0
+          expect(params['Reference']).to eq e.reference
 
           {
             'Payments' => [{
@@ -53,7 +53,8 @@ describe XeroExporter::Executor do
       expect(state[:create_invoice_payment][:amount]).to be nil
 
       expect(@logger_string_io.string).to include 'Running create_invoice_payment task'
-      expect(@logger_string_io.string).to include 'Not adding a payment because the amount is not present or not positive'
+      expect(@logger_string_io.string).to include 'Not adding a payment because the amount ' \
+                                                  'is not present or not positive'
     end
   end
 end

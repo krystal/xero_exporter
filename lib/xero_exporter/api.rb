@@ -11,7 +11,7 @@ module XeroExporter
 
     class APIError < Error
 
-      attr_reader :status, :message, :body
+      attr_reader :status, :body
 
       def initialize(status, message, body = nil)
         @status = status

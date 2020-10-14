@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module ExportHelpers
 
   def create_export(yield_args: [])
