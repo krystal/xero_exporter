@@ -17,4 +17,11 @@ RSpec.configure do |config|
   config.mock_with :rspec do |mocks|
     mocks.verify_partial_doubles = true
   end
+
+  config.before do
+    @logger_string_io = StringIO.new
+    XeroExporter.logger = Logger.new(@logger_string_io)
+  end
+
+  config.include ExportHelpers
 end

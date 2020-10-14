@@ -8,4 +8,13 @@ Metrics/ModuleLength:
   Enabled: false
 
 Metrics/AbcSize:
-  Max: 30
+  Max: 60
+
+Metrics/CyclomaticComplexity:
+  Max: 10
+
+Metrics/ClassLength:
+  Enabled: false
+
+Lint/MissingSuper:
+  Enabled: false

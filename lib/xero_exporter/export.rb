@@ -68,6 +68,7 @@ module XeroExporter
 
     def execute(api)
       executor = Executor.new(self, api)
+      yield executor if block_given?
       executor.execute
     end
 

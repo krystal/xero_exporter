@@ -19,6 +19,10 @@ module XeroExporter
         @body = body
       end
 
+      def message
+        to_s
+      end
+
       def to_s
         "[#{@status}] #{@message}"
       end

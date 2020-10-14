@@ -1,9 +1,15 @@
 # frozen_string_literal: true
 
+require 'yaml'
 require 'xero_exporter/proposal'
+require 'bigdecimal'
+require 'bigdecimal/util'
 
 module XeroExporter
   class Executor
+
+    attr_accessor :state_reader
+    attr_accessor :state_writer
 
     def initialize(export, api)
       @export = export
@@ -14,61 +20,79 @@ module XeroExporter
     # Execute all actions required to perform this export
     #
     # @return [void]
-    def execute
+    def execute_all
       create_invoice
+      create_invoice_payment
       create_credit_note
+      create_credit_note_payment
       add_payments
       add_refunds
       true
     end
 
-    private
-
     # Create an invoice for all invoice lines in the export
     #
     # @return [void]
     def create_invoice
-      line_items = create_xero_line_items(@proposal.invoice_lines)
-      return false if line_items.empty?
+      run_task :create_invoice do
+        line_items = create_xero_line_items(@proposal.invoice_lines)
+        if line_items.empty?
+          logger.debug 'Not creating an invoice because there are no invoice lines'
+          current_state[:status] = 'not required because no invoice lines'
+          return false
+        end
 
-      spec = {
-        'Type' => 'ACCREC',
-        'Contact' => {
-          'ContactID' => find_or_create_xero_contact(@export.invoice_contact_name)
-        },
-        'Date' => @export.date.strftime('%Y-%m-%d'),
-        'DueDate' => @export.date.strftime('%Y-%m-%d'),
-        'Reference' => @export.reference,
-        'CurrencyCode' => @export.currency,
-        'Status' => 'AUTHORISED',
-        'LineItems' => line_items
-      }
+        logger.debug 'Creating new invoice'
 
-      invoice = @api.post('Invoices', spec)['Invoices'].first
-      create_invoice_payment(invoice)
+        spec = {
+          'Type' => 'ACCREC',
+          'Contact' => {
+            'ContactID' => find_or_create_xero_contact(@export.invoice_contact_name)
+          },
+          'Date' => @export.date.strftime('%Y-%m-%d'),
+          'DueDate' => @export.date.strftime('%Y-%m-%d'),
+          'Reference' => @export.reference,
+          'CurrencyCode' => @export.currency,
+          'Status' => 'AUTHORISED',
+          'LineItems' => line_items
+        }
+
+        invoice = @api.post('Invoices', spec)['Invoices'].first
+
+        logger.debug "Invoice created with ID #{invoice['InvoiceID']} for #{invoice['AmountDue']}"
+        current_state[:status] = 'invoice created'
+        current_state[:invoice_id] = invoice['InvoiceID']
+        current_state[:amount] = invoice['AmountDue']
+      end
     end
 
     # Create a credit note for all credit note lines in the export
     #
     # @return [void]
     def create_credit_note
-      line_items = create_xero_line_items(@proposal.credit_note_lines)
-      return false if line_items.empty?
+      run_task :create_credit_note do
+        line_items = create_xero_line_items(@proposal.credit_note_lines)
+        if line_items.empty?
+          current_state[:status] = 'not required because no credit note lines'
+          return false
+        end
 
-      spec = {
-        'Type' => 'ACCRECCREDIT',
-        'Contact' => {
-          'ContactID' => find_or_create_xero_contact(@export.invoice_contact_name)
-        },
-        'Date' => @export.date.strftime('%Y-%m-%d'),
-        'Reference' => @export.reference,
-        'CurrencyCode' => @export.currency,
-        'Status' => 'AUTHORISED',
-        'LineItems' => line_items
-      }
+        spec = {
+          'Type' => 'ACCRECCREDIT',
+          'Contact' => {
+            'ContactID' => find_or_create_xero_contact(@export.invoice_contact_name)
+          },
+          'Date' => @export.date.strftime('%Y-%m-%d'),
+          'Reference' => @export.reference,
+          'CurrencyCode' => @export.currency,
+          'Status' => 'AUTHORISED',
+          'LineItems' => line_items
+        }
 
-      credit_note = @api.post('CreditNotes', spec)['CreditNotes'].first
-      create_credit_note_payment(credit_note)
+        credit_note = @api.post('CreditNotes', spec)['CreditNotes'].first
+        current_state[:credit_note_id] = credit_note['CreditNoteID']
+        current_state[:amount] = credit_note['RemainingCredit']
+      end
     end
 
     # Create payments for all payments in the export
@@ -76,8 +100,16 @@ module XeroExporter
     # @return [void]
     def add_payments
       @proposal.payments.each do |bank_account, amounts|
-        add_bank_transfer(@export.receivables_account, bank_account, amounts[:amount])
-        add_fee_transaction(bank_account, amounts[:fees])
+        run_task "add_payments_#{bank_account}_transfer" do
+          transfer = add_bank_transfer(@export.receivables_account, bank_account, amounts[:amount])
+          current_state[:transfer_id] = transfer['BankTransferID']
+        end
+
+        run_task "add_payments_#{bank_account}_fee" do
+          if fee = add_fee_transaction(bank_account, amounts[:fees])
+            current_state[:fee_transaction_id] = fee['BankTransactionID']
+          end
+        end
       end
     end
 
@@ -86,8 +118,16 @@ module XeroExporter
     # @return [void]
     def add_refunds
       @proposal.refunds.each do |bank_account, amounts|
-        add_bank_transfer(bank_account, @export.receivables_account, amounts[:amount])
-        add_fee_transaction(bank_account, amounts[:fees])
+        run_task "add_refunds_#{bank_account}_transfer" do
+          transfer = add_bank_transfer(bank_account, @export.receivables_account, amounts[:amount])
+          current_state[:transfer_id] = transfer['BankTransferID']
+        end
+
+        run_task "add_refunds_#{bank_account}_fee" do
+          if fee = add_fee_transaction(bank_account, amounts[:fees])
+            current_state[:fee_transaction_id] = fee['BankTransactionID']
+          end
+        end
       end
     end
 
@@ -95,33 +135,60 @@ module XeroExporter
     #
     # @param invoice [Hash]
     # @return [void]
-    def create_invoice_payment(invoice)
-      return unless invoice['AmountDue'].positive?
+    def create_invoice_payment
+      run_task :create_invoice_payment do
+        if state[:create_invoice].nil?
+          raise Error, 'create_invoice task must be executed before this action'
+        end
 
-      @api.put('Payments', {
-        'Invoice' => { 'InvoiceID' => invoice['InvoiceID'] },
-        'Account' => { 'Code' => @export.receivables_account },
-        'Date' => @export.date.strftime('%Y-%m-%d'),
-        'Amount' => invoice['AmountDue'],
-        'Reference' => @export.reference
-      })
+        if state[:create_invoice][:amount].nil? || !state[:create_invoice][:amount].positive?
+          logger.debug 'Not adding a payment because the amount is not present or not positive'
+          return
+        end
+
+        logger.debug "Creating payment for invoice #{state[:create_invoice][:invoice_id]} " \
+                        "for #{state[:create_invoice][:amount]}"
+        logger.debug "Using receivables account: #{@export.receivables_account}"
+
+        payment = @api.put('Payments', {
+          'Invoice' => { 'InvoiceID' => state[:create_invoice][:invoice_id] },
+          'Account' => { 'Code' => @export.receivables_account },
+          'Date' => @export.date.strftime('%Y-%m-%d'),
+          'Amount' => state[:create_invoice][:amount],
+          'Reference' => @export.reference
+        })['Payments'].first
+
+        current_state[:payment_id] = payment['PaymentID']
+        current_state[:amount] = payment['Amount']
+      end
     end
 
     # Create a new payment that fully pays a given credit note
     #
     # @param credit_note [Hash]
     # @return [void]
-    def create_credit_note_payment(credit_note)
-      reeturn unless credit_note['Total'].positive?
+    def create_credit_note_payment
+      run_task :create_credit_note_payment do
+        return if state[:create_credit_note][:amount].nil?
+        return unless state[:create_credit_note][:amount].positive?
 
-      @api.put('Payments', {
-        'CreditNote' => { 'CreditNoteID' => credit_note['CreditNoteID'] },
-        'Account' => { 'Code' => @export.receivables_account },
-        'Date' => @export.date.strftime('%Y-%m-%d'),
-        'Amount' => credit_note['Total'],
-        'Reference' => @export.reference
-      })
+        logger.debug "Creating payment for credit note #{state[:create_credit_note][:credit_note_id]}" \
+                        "for #{state[:create_credit_note][:amount]}"
+        logger.debug "Using receivables account: #{@export.receivables_account}"
+
+        payment = @api.put('Payments', {
+          'CreditNote' => { 'CreditNoteID' => state[:create_credit_note][:credit_note_id] },
+          'Account' => { 'Code' => @export.receivables_account },
+          'Date' => @export.date.strftime('%Y-%m-%d'),
+          'Amount' => state[:create_credit_note][:amount],
+          'Reference' => @export.reference
+        })['Payments'].first
+        current_state[:payment_id] = payment['PaymentID']
+        current_state[:amount] = payment['Amount']
+      end
     end
+
+    private
 
     # Transfer an amount of money from one bank account to another
     #
@@ -130,12 +197,14 @@ module XeroExporter
     # @param amount [Float]
     # @return [void]
     def add_bank_transfer(from, to, amount)
+      amount = amount.round(2)
+      logger.debug "Transferring #{amount} from #{from} to #{to}"
       @api.put('BankTransfers', {
         'FromBankAccount' => { 'Code' => from },
         'ToBankAccount' => { 'Code' => to },
         'Amount' => amount,
         'Date' => @export.date.strftime('%Y-%m-%d')
-      })
+      })['BankTransfers'].first
     end
 
     # Create an array of line item hashes which can be submitted to the Xero
@@ -172,7 +241,10 @@ module XeroExporter
 
       @api.post('BankTransactions', {
         'Type' => amount.negative? ? 'RECEIVE' : 'SPEND',
-        'Contact' => { 'ContactID' => find_or_create_xero_contact(@export.payment_providers[bank_account] || 'Generic Payment Processor') },
+        'Contact' => {
+          'ContactID' => find_or_create_xero_contact(@export.payment_providers[bank_account] ||
+                                                          'Generic Payment Processor')
+        },
         'Date' => @export.date.strftime('%Y-%m-%d'),
         'BankAccount' => { 'Code' => bank_account },
         'Reference' => @export.reference,
@@ -183,7 +255,7 @@ module XeroExporter
             'AccountCode' => @export.fee_accounts[bank_account] || '404'
           }
         ]
-      })
+      })['BankTransactions'].first
     end
 
     # Find or create a contact with a given name and return the ID of that
@@ -220,7 +292,7 @@ module XeroExporter
       existing = tax_rates.find do |rate|
         rate['Status'] == 'ACTIVE' &&
           rate['ReportTaxType'] == tax_rate.xero_report_type &&
-          rate['EffectiveRate'].to_f == tax_rate.rate &&
+          rate['EffectiveRate'].to_d == tax_rate.rate.to_d &&
           rate['Name'].include?(country.code)
       end
 
@@ -258,6 +330,59 @@ module XeroExporter
     def logger
       XeroExporter.logger
     end
+
+    # Executes a named task if it is suitable to be executed
+    #
+    # @return [void]
+    def run_task(name)
+      if @state.nil?
+        @state = load_state
+      end
+
+      if @state[name.to_sym] && @state[name.to_sym][:state] == 'complete'
+        logger.debug "Not executing #{name} because it has already been run"
+        return
+      end
+
+      logger.debug "Running #{name} task"
+
+      @current_state = @state[name.to_sym] ||= {}
+      @current_state[:state] = 'running'
+      @current_state.delete(:error)
+      yield if block_given?
+    rescue StandardError => e
+      @current_state[:state] = 'error'
+      @current_state[:error] = { class: e.class.name, message: e.message }
+      raise
+    ensure
+      if @current_state[:state] == 'running'
+        @current_state[:state] = 'complete'
+      end
+
+      @current_state = nil
+      save_state
+    end
+
+    # Loads state as apprppriate
+    #
+    # @return [Hash]
+    def load_state
+      return {} unless @state_reader
+
+      @state_reader.call
+    end
+
+    # Saves the current state as appropriate
+    #
+    # @return [void]
+    def save_state
+      return unless @state_writer
+
+      @state_writer.call(@state)
+    end
+
+    attr_reader :state
+    attr_reader :current_state
 
   end
 end
