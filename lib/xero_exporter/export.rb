@@ -68,8 +68,8 @@ module XeroExporter
       refund
     end
 
-    def execute(api)
-      executor = Executor.new(self, api)
+    def execute(api, **options)
+      executor = Executor.new(self, api, **options)
       yield executor if block_given?
       executor.execute_all
     end

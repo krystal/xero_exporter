@@ -11,9 +11,10 @@ module XeroExporter
     attr_accessor :state_reader
     attr_accessor :state_writer
 
-    def initialize(export, api)
+    def initialize(export, api, **options)
       @export = export
       @api = api
+      @logger = options[:logger]
       @proposal = Proposal.new(export)
     end
 
@@ -338,7 +339,7 @@ module XeroExporter
     #
     # @return [Logger]
     def logger
-      XeroExporter.logger
+      @logger || XeroExporter.logger
     end
 
     # Executes a named task if it is suitable to be executed

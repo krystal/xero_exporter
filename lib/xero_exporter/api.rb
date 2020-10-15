@@ -35,9 +35,10 @@ module XeroExporter
       put: Net::HTTP::Put
     }.freeze
 
-    def initialize(access_token, tenant_id)
+    def initialize(access_token, tenant_id, **options)
       @access_token = access_token
       @tenant_id = tenant_id
+      @logger = options[:logger]
     end
 
     def get(path, params = {})
@@ -124,7 +125,7 @@ module XeroExporter
     end
 
     def logger
-      XeroExporter.logger
+      @logger || XeroExporter.logger
     end
 
   end

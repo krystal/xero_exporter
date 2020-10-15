@@ -106,13 +106,9 @@ end
 # happening in a log file so you can see exactly what's going to be exported.
 
 # Create a new API instance which can be used to authenticate to the API.
-# You'll need to register appropriately with Xero to obtain client id/secret
-# and then use OAuth to generate an access token.
-api = XeroExporter::API.new(client_id, client_secret, access_token)
+api = XeroExporter::API.new(access_token, tenant_id)
 
 # Once you have your API instance, go ahead and initiate the export by providing
-# your export instance and the ID of the organization that you wish to execute
-# it against. You can also provider a logger which will receive useful text
-# throughout the process outlining the current state of things.
-api.export(tenant_id, export, logger: Logger.new(STDOUT))
+# the API instance.
+export.execute(api)
 ```
