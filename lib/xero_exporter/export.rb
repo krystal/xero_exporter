@@ -21,6 +21,7 @@ module XeroExporter
     attr_reader :refunds
 
     attr_reader :payment_providers
+    attr_reader :account_names
 
     def initialize
       @date = Date.today
@@ -31,6 +32,7 @@ module XeroExporter
       @refunds = []
       @payment_providers = {}
       @fee_accounts = {}
+      @account_names = {}
     end
 
     def reference
@@ -69,7 +71,7 @@ module XeroExporter
     def execute(api)
       executor = Executor.new(self, api)
       yield executor if block_given?
-      executor.execute
+      executor.execute_all
     end
 
     private

@@ -27,8 +27,8 @@ module XeroExporter
       case @type
       when :moss
         "MOSS for #{country.code} (#{@rate}%)"
-      when :reverse_change
-        "Reverse Charge for #{country.code} (#{@rate}%)"
+      when :reverse_charge
+        "Reverse Charge (#{country.code})"
       when :ec_services
         "EC Services for #{country.code} (#{@rate}%)"
       else
@@ -38,7 +38,6 @@ module XeroExporter
 
     def xero_report_type
       return 'MOSSSALES' if @type == :moss
-      return 'REVERSECHARGES' if @type == :reverse_charge
       return 'ECOUTPUTSERVICES' if @type == :ec_services
 
       'OUTPUT'

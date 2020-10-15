@@ -231,7 +231,7 @@ module XeroExporter
         end
 
         {
-          'Description' => "Sales (#{country.code}, #{tax_rate.rate}%)",
+          'Description' => @proposal.invoice_line_description(account, country, tax_rate),
           'Quantity' => 1,
           'AccountCode' => account,
           'TaxAmount' => amounts[:tax],
@@ -365,7 +365,7 @@ module XeroExporter
       @current_state[:error] = { class: e.class.name, message: e.message }
       raise
     ensure
-      if @current_state[:state] == 'running'
+      if @current_state && @current_state[:state] == 'running'
         @current_state[:state] = 'complete'
       end
 

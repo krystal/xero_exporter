@@ -49,6 +49,14 @@ module XeroExporter
       export_refunds
     end
 
+    # Return the text to go with an invoice line
+    #
+    # @return [String]
+    def invoice_line_description(account, country, tax_rate)
+      name = @export.account_names[account.to_s] || "#{account} Sales"
+      "#{name} (#{country.code}, #{tax_rate.rate}%)"
+    end
+
     private
 
     def get_invoice_lines_from_invoices(invoices)
