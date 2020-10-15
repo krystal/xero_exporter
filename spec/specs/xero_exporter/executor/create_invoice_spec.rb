@@ -57,18 +57,21 @@ describe XeroExporter::Executor do
           expect(params['LineItems'][0]['AccountCode']).to eq '200'
           expect(params['LineItems'][0]['Quantity']).to eq 1
           expect(params['LineItems'][0]['TaxAmount']).to eq 20.0
+          expect(params['LineItems'][0]['Description']).to eq 'Widgets (GB, 20.0%)'
           expect(params['LineItems'][0]['LineAmount']).to eq 100.0
           expect(params['LineItems'][0]['TaxType']).to eq 'Tax for GB (20.0%)'
 
           expect(params['LineItems'][1]['AccountCode']).to eq '200'
           expect(params['LineItems'][1]['Quantity']).to eq 1
           expect(params['LineItems'][1]['TaxAmount']).to eq 21.0
+          expect(params['LineItems'][1]['Description']).to eq 'Widgets (FR, 21.0%)'
           expect(params['LineItems'][1]['LineAmount']).to eq 100.0
           expect(params['LineItems'][1]['TaxType']).to eq 'MOSS for FR (21.0%)'
 
           expect(params['LineItems'][2]['AccountCode']).to eq '205'
           expect(params['LineItems'][2]['Quantity']).to eq 1
           expect(params['LineItems'][2]['TaxAmount']).to eq 0.0
+          expect(params['LineItems'][2]['Description']).to eq '205 Sales (US, 0.0%)'
           expect(params['LineItems'][2]['LineAmount']).to eq 250.0
           expect(params['LineItems'][2]['TaxType']).to eq 'Tax for US (0.0%)'
 

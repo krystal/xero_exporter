@@ -9,6 +9,7 @@ module ExportHelpers
     export.receivables_account = '020'
     export.fee_accounts['010'] = '010.404'
     export.payment_providers['010'] = 'Stripe'
+    export.account_names['200'] = 'Widgets'
 
     export.date = Date.new(2020, 10, 2)
     yield(export, *yield_args) if block_given?
