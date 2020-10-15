@@ -362,8 +362,10 @@ module XeroExporter
       @current_state.delete(:error)
       yield if block_given?
     rescue StandardError => e
-      @current_state[:state] = 'error'
-      @current_state[:error] = { class: e.class.name, message: e.message }
+      if @current_state
+        @current_state[:state] = 'error'
+        @current_state[:error] = { class: e.class.name, message: e.message }
+      end
       raise
     ensure
       if @current_state && @current_state[:state] == 'running'
