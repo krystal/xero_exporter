@@ -2,6 +2,13 @@
 
 This file contains all the latest changes and updates to this application.
 
+## 1.2.1
+
+### Bug Fixes
+
+- lookup tax rates including the country name and code ([87fb16](https://github.com/krystal/xero_exporter/commit/87fb16168eb4212db916b6c14d4255b370d35b7b))
+- support for country names in moss accounts ([ce62d2](https://github.com/krystal/xero_exporter/commit/ce62d2908a4ebb56ceca2801d5c3b78ede62eff7))
+
 ## 1.2.0
 
 ### Features
