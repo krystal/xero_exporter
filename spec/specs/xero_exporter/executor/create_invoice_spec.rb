@@ -13,7 +13,7 @@ describe XeroExporter::Executor do
         end
 
         e.add_invoice do |invoice|
-          invoice.country = 'FR'
+          invoice.country = 'DE'
           invoice.tax_rate = 21.0
           invoice.tax_type = :moss
           invoice.add_line account_code: '200', amount: 100, tax: 21
@@ -64,9 +64,9 @@ describe XeroExporter::Executor do
           expect(params['LineItems'][1]['AccountCode']).to eq '200'
           expect(params['LineItems'][1]['Quantity']).to eq 1
           expect(params['LineItems'][1]['TaxAmount']).to eq 21.0
-          expect(params['LineItems'][1]['Description']).to eq 'Widgets (FR, 21.0%)'
+          expect(params['LineItems'][1]['Description']).to eq 'Widgets (DE, 21.0%)'
           expect(params['LineItems'][1]['LineAmount']).to eq 100.0
-          expect(params['LineItems'][1]['TaxType']).to eq 'MOSS for FR (21.0%)'
+          expect(params['LineItems'][1]['TaxType']).to eq 'MOSS Germany 21.0%'
 
           expect(params['LineItems'][2]['AccountCode']).to eq '205'
           expect(params['LineItems'][2]['Quantity']).to eq 1

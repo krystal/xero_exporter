@@ -8,7 +8,7 @@ Gem::Specification.new do |s|
   s.summary       = s.description
   s.homepage      = 'https://github.com/krystal/xero_exporter'
   s.version       = XeroExporter::VERSION
-  s.files         = Dir.glob('VERSION') + Dir.glob('{lib}/**/*')
+  s.files         = Dir.glob('VERSION') + Dir.glob('{lib,resource}/**/*')
   s.require_paths = ['lib']
   s.authors       = ['Adam Cooke']
   s.email         = ['adam@krystal.uk']

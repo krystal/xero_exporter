@@ -64,7 +64,7 @@ describe XeroExporter::Executor do
           expect(params['LineItems'][1]['Quantity']).to eq 1
           expect(params['LineItems'][1]['TaxAmount']).to eq 21.0
           expect(params['LineItems'][1]['LineAmount']).to eq 100.0
-          expect(params['LineItems'][1]['TaxType']).to eq 'MOSS for FR (21.0%)'
+          expect(params['LineItems'][1]['TaxType']).to eq 'MOSS France 21.0%'
 
           expect(params['LineItems'][2]['AccountCode']).to eq '205'
           expect(params['LineItems'][2]['Quantity']).to eq 1

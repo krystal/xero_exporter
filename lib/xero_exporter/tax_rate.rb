@@ -26,7 +26,7 @@ module XeroExporter
     def xero_name(country)
       case @type
       when :moss
-        "MOSS for #{country.code} (#{@rate}%)"
+        "MOSS #{country.name} #{@rate}%"
       when :reverse_charge
         "Reverse Charge (#{country.code})"
       when :ec_services
