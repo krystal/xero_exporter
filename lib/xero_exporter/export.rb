@@ -12,6 +12,8 @@ module XeroExporter
     attr_accessor :date
     attr_accessor :currency
     attr_accessor :invoice_contact_name
+    attr_accessor :invoice_number
+    attr_accessor :invoice_reference
 
     attr_accessor :receivables_account
     attr_accessor :fee_accounts
@@ -22,6 +24,7 @@ module XeroExporter
 
     attr_reader :payment_providers
     attr_reader :account_names
+    attr_reader :tracking
 
     def initialize
       @date = Date.today
@@ -33,6 +36,7 @@ module XeroExporter
       @payment_providers = {}
       @fee_accounts = {}
       @account_names = {}
+      @tracking = {}
     end
 
     def reference

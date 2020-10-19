@@ -52,7 +52,8 @@ module XeroExporter
           },
           'Date' => @export.date.strftime('%Y-%m-%d'),
           'DueDate' => @export.date.strftime('%Y-%m-%d'),
-          'Reference' => @export.reference,
+          'InvoiceNumber' => @export.invoice_number,
+          'Reference' => @export.invoice_reference || @export.reference,
           'CurrencyCode' => @export.currency,
           'Status' => 'AUTHORISED',
           'LineItems' => line_items
@@ -237,7 +238,22 @@ module XeroExporter
           'AccountCode' => account,
           'TaxAmount' => amounts[:tax],
           'LineAmount' => amounts[:amount],
-          'TaxType' => xero_tax_rate
+          'TaxType' => xero_tax_rate,
+          'Tracking' => tracking_options
+        }
+      end
+    end
+
+    # Return an array of tracking options
+    #
+    # @return [Array<Hash>]
+    def tracking_options
+      return [] if @export.tracking.empty?
+
+      @export.tracking.map do |key, value|
+        {
+          'Name' => key,
+          'Option' => value
         }
       end
     end
@@ -263,7 +279,8 @@ module XeroExporter
           {
             'Description' => 'Fees',
             'UnitAmount' => amount.abs,
-            'AccountCode' => @export.fee_accounts[bank_account] || '404'
+            'AccountCode' => @export.fee_accounts[bank_account] || '404',
+            'Tracking' => tracking_options
           }
         ]
       })['BankTransactions'].first
