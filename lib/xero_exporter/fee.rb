@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
 module XeroExporter
-  class Payment
+  class Fee
 
-    attr_accessor :id
-    attr_accessor :bank_account
     attr_accessor :amount
+    attr_accessor :category
+    attr_accessor :bank_account
 
   end
 end

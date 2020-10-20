@@ -28,6 +28,7 @@ module XeroExporter
       create_credit_note_payment
       add_payments
       add_refunds
+      add_fees
       true
     end
 
@@ -105,16 +106,10 @@ module XeroExporter
     #
     # @return [void]
     def add_payments
-      @proposal.payments.each do |bank_account, amounts|
-        run_task "add_payments_#{bank_account}_transfer" do
-          transfer = add_bank_transfer(@export.receivables_account, bank_account, amounts[:amount])
+      @proposal.payments.each do |bank_account, amount|
+        run_task "add_payments_#{bank_account}" do
+          transfer = add_bank_transfer(@export.receivables_account, bank_account, amount)
           current_state[:transfer_id] = transfer['BankTransferID']
-        end
-
-        run_task "add_payments_#{bank_account}_fee" do
-          if fee = add_fee_transaction(bank_account, amounts[:fees])
-            current_state[:fee_transaction_id] = fee['BankTransactionID']
-          end
         end
       end
     end
@@ -123,15 +118,26 @@ module XeroExporter
     #
     # @return [void]
     def add_refunds
-      @proposal.refunds.each do |bank_account, amounts|
-        run_task "add_refunds_#{bank_account}_transfer" do
-          transfer = add_bank_transfer(bank_account, @export.receivables_account, amounts[:amount])
-          current_state[:transfer_id] = transfer['BankTransferID']
+      @proposal.refunds.each do |bank_account, amount|
+        run_task "add_refunds_#{bank_account}" do
+          if transfer = add_bank_transfer(bank_account, @export.receivables_account, amount)
+            current_state[:transfer_id] = transfer['BankTransferID']
+          end
         end
+      end
+    end
 
-        run_task "add_refunds_#{bank_account}_fee" do
-          if fee = add_fee_transaction(bank_account, amounts[:fees])
-            current_state[:fee_transaction_id] = fee['BankTransactionID']
+    # Create payments for all payments in the export
+    #
+    # @return [void]
+    def add_fees
+      @proposal.fees.each do |bank_account, amounts_by_category|
+        amounts_by_category.each do |category, amount|
+          category_for_key = category&.downcase&.gsub(' ', '_') || 'none'
+          run_task "add_fees_#{bank_account}_#{category_for_key}" do
+            if transaction = add_fee_transaction(bank_account, amount, category)
+              current_state[:transaction_id] = transaction['BankTransactionID']
+            end
           end
         end
       end
@@ -263,8 +269,10 @@ module XeroExporter
     # @param bank_account [String]
     # @param amount [Float]
     # @return [void]
-    def add_fee_transaction(bank_account, amount)
+    def add_fee_transaction(bank_account, amount, description = nil)
       return if amount.zero?
+
+      logger.debug "Creating fee transaction for #{amount} from #{bank_account} (#{description})"
 
       @api.post('BankTransactions', {
         'Type' => amount.negative? ? 'RECEIVE' : 'SPEND',
@@ -277,7 +285,7 @@ module XeroExporter
         'Reference' => @export.reference,
         'LineItems' => [
           {
-            'Description' => 'Fees',
+            'Description' => description || 'Fees',
             'UnitAmount' => amount.abs,
             'AccountCode' => @export.fee_accounts[bank_account] || '404',
             'Tracking' => tracking_options

@@ -38,12 +38,6 @@ export.invoice_contact_name = 'Generic Customer'
 # the export. It's important to ensure that you categorise the tax
 # element on this as that forms a key part of the export.
 export.add_invoice do |invoice|
-  # For logging & reporting purposes, you can add the invoice
-  # ID and/or number here. This won't actually be exported to Xero but
-  # may be useful later for debugging purposes.
-  invoice.id = 'inv_abcdef12345'
-  invoice.number = 'INV-2020'
-
   # Specify the country code for this invoice
   invoice.country = 'GB'
 
@@ -69,36 +63,29 @@ end
 # Next, add all the payments that have been received on this day
 # to the export.
 export.add_payment do |payment|
-  # As with invoices, this isn't exported but useful for logging
-  # and debugging.
-  payment.id = 'pay_abcdef12345'
-
   # Specify the amount of money that was received on this day
   payment.amount = 240.0
 
   # Specify the bank account code that the money was deposited into
   payment.bank_account = '010'
+end
 
-  # Specify the amount of fees that have been deducted for this payment.
-  # If fees are deducted by a separate invoice by your payment provider
-  # you should not specify these here.
-  payment.fees = 2.30
+# Next add any payment fees that have been charged to us and thus deducted
+# from the amount we will be receiving into this bank account. Use a
+# category to split up fees on the bank transaction line.
+export.add_fee do |fee|
+  fee.category = 'General fees'
+  fee.amount = 2.30
+  fee.bank_account = '010'
 end
 
 # Next, do exactly the same as above with refunds really.
 export.add_refund do |refund|
-  # The refund identifier for logging/debugging
-  refund.id = 'ref_abcde12345'
-
   # Specify the amount of the refund
   refund.amount = 10.0
 
   # Specify the bank account that the refund was taken from
   refund.bank_account = '010'
-
-  # If any fees were charged or refunded to you for this refund, you
-  # can specify them here. Refunded fees should be entered negatively.
-  refund.fees = -0.50
 end
 
 # When you've added all your data to this export, you can go ahead and

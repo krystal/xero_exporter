@@ -68,17 +68,14 @@ module XeroExporter
           export = Export.new
           export.add_payment do |p|
             p.amount = 10
-            p.fees = 0.50
             p.bank_account = '010'
           end
           export.add_payment do |p|
             p.amount = 50
-            p.fees = 2.0
             p.bank_account = '010'
           end
           export.add_payment do |p|
             p.amount = 10
-            p.fees = 0.50
             p.bank_account = '020'
           end
 
@@ -86,12 +83,9 @@ module XeroExporter
           @payments = @proposal.payments
         end
 
-        it 'returns a hash grouped by account, country and tax' do
-          expect(@payments['010'][:amount]).to eq 60
-          expect(@payments['010'][:fees]).to eq 2.5
-
-          expect(@payments['020'][:amount]).to eq 10
-          expect(@payments['020'][:fees]).to eq 0.50
+        it 'returns a hash grouped by bank account' do
+          expect(@payments['010']).to eq 60
+          expect(@payments['020']).to eq 10
         end
       end
     end
@@ -102,17 +96,14 @@ module XeroExporter
           export = Export.new
           export.add_refund do |p|
             p.amount = 10
-            p.fees = 0.50
             p.bank_account = '010'
           end
           export.add_refund do |p|
             p.amount = 50
-            p.fees = 2.0
             p.bank_account = '010'
           end
           export.add_refund do |p|
             p.amount = 10
-            p.fees = 0.50
             p.bank_account = '020'
           end
 
@@ -120,12 +111,50 @@ module XeroExporter
           @refunds = @proposal.refunds
         end
 
-        it 'returns a hash grouped by account, country and tax' do
-          expect(@refunds['010'][:amount]).to eq 60
-          expect(@refunds['010'][:fees]).to eq 2.5
+        it 'returns a hash grouped by bank account' do
+          expect(@refunds['010']).to eq 60
+          expect(@refunds['020']).to eq 10
+        end
+      end
+    end
 
-          expect(@refunds['020'][:amount]).to eq 10
-          expect(@refunds['020'][:fees]).to eq 0.50
+    context '#fees' do
+      context 'with an example set of data' do
+        before do
+          export = Export.new
+          export.add_fee do |p|
+            p.category = 'Bank Fees'
+            p.amount = 10.0
+            p.bank_account = '010'
+          end
+
+          export.add_fee do |p|
+            p.category = 'Bank Fees'
+            p.amount = 20.0
+            p.bank_account = '010'
+          end
+
+          export.add_fee do |p|
+            p.category = 'Fraud Fees'
+            p.amount = 0.5
+            p.bank_account = '010'
+          end
+
+          export.add_fee do |p|
+            p.category = 'Bank Fees'
+            p.amount = 20.0
+            p.bank_account = '011'
+          end
+
+          @proposal = Proposal.new(export)
+          @fees = @proposal.fees
+        end
+
+        it 'returns fees grouped by category & bank account' do
+          expect(@fees).to be_a Hash
+          expect(@fees['010']['Bank Fees']).to eq 30.0
+          expect(@fees['010']['Fraud Fees']).to eq 0.5
+          expect(@fees['011']['Bank Fees']).to eq 20.0
         end
       end
     end

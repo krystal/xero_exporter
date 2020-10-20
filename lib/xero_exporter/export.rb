@@ -3,6 +3,7 @@
 require 'xero_exporter/invoice'
 require 'xero_exporter/payment'
 require 'xero_exporter/refund'
+require 'xero_exporter/fee'
 require 'xero_exporter/executor'
 
 module XeroExporter
@@ -21,6 +22,7 @@ module XeroExporter
     attr_reader :invoices
     attr_reader :payments
     attr_reader :refunds
+    attr_reader :fees
 
     attr_reader :payment_providers
     attr_reader :account_names
@@ -33,6 +35,7 @@ module XeroExporter
       @invoices = []
       @payments = []
       @refunds = []
+      @fees = []
       @payment_providers = {}
       @fee_accounts = {}
       @account_names = {}
@@ -70,6 +73,13 @@ module XeroExporter
       yield refund if block_given?
       @refunds << refund
       refund
+    end
+
+    def add_fee
+      fee = Fee.new
+      yield fee if block_given?
+      @fees << fee
+      fee
     end
 
     def execute(api, **options)

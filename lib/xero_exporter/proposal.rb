@@ -27,11 +27,10 @@ module XeroExporter
     #
     # @return [Hash]
     def payments
-      export_payments = Hash.new { |h, k| h[k] = { amount: 0.0, fees: 0.0 } }
+      export_payments = Hash.new(0.0)
       @export.payments.each do |payment|
         key = payment.bank_account
-        export_payments[key][:amount] += payment.amount || 0.0
-        export_payments[key][:fees] += payment.fees || 0.0
+        export_payments[key] += payment.amount || 0.0
       end
       export_payments
     end
@@ -40,13 +39,22 @@ module XeroExporter
     #
     # @return [Hash]
     def refunds
-      export_refunds = Hash.new { |h, k| h[k] = { amount: 0.0, fees: 0.0 } }
+      export_refunds = Hash.new(0.0)
       @export.refunds.each do |refund|
         key = refund.bank_account
-        export_refunds[key][:amount] += refund.amount || 0.0
-        export_refunds[key][:fees] += refund.fees || 0.0
+        export_refunds[key] += refund.amount || 0.0
       end
       export_refunds
+    end
+
+    # Return the fees grouped by bank account & category
+    #
+    # @return [Hash]
+    def fees
+      initial_hash = Hash.new { |h, k| h[k] = Hash.new(0.0) }
+      @export.fees.each_with_object(initial_hash) do |fee, hash|
+        hash[fee.bank_account][fee.category] += fee.amount || 0.0
+      end
     end
 
     # Return the text to go with an invoice line
