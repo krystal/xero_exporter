@@ -2,6 +2,12 @@
 
 This file contains all the latest changes and updates to this application.
 
+## 1.3.0
+
+### Features
+
+- separate fees from payments ([2588a4](https://github.com/krystal/xero_exporter/commit/2588a46ad0283ef1ca5bfd8fd3f0b58316752122))
+
 ## 1.2.1
 
 ### Bug Fixes
