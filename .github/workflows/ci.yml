@@ -38,7 +38,7 @@ jobs:
 
   release-please:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/main'
     outputs:
       release_created: ${{ steps.release-please.outputs.release_created }}
       version: ${{ steps.release-please.outputs.version }}
