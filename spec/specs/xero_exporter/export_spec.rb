@@ -38,6 +38,31 @@ describe XeroExporter::Export do
     end
   end
 
+  context '#add_credit_note' do
+    it 'adds a new credit note' do
+      invoice = export.add_credit_note do |i|
+        i.id = 'cn-1'
+      end
+      expect(invoice.id).to eq 'cn-1'
+      expect(invoice.type).to eq :credit_note
+      expect(export.invoices).to eq [invoice]
+    end
+  end
+
+  context '#add_fee' do
+    it 'adds a new fee' do
+      fee = export.add_fee do |f|
+        f.amount = 2.50
+        f.category = 'Bank Fees'
+        f.bank_account = '010'
+      end
+      expect(fee.amount).to eq 2.50
+      expect(fee.category).to eq 'Bank Fees'
+      expect(fee.bank_account).to eq '010'
+      expect(export.fees).to eq [fee]
+    end
+  end
+
   context '#add_payment' do
     it 'adds a new payment' do
       payment = export.add_payment do |p|

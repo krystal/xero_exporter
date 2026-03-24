@@ -95,6 +95,45 @@ module XeroExporter
       end
     end
 
+    context '#credit_note_lines' do
+      context 'with an example set of data' do
+        before do
+          export = Export.new
+
+          export.add_credit_note do |invoice|
+            invoice.country = 'GB'
+            invoice.tax_rate = 20.0
+            invoice.add_line account_code: '200', amount: 100.0, tax: 20.0
+          end
+
+          export.add_credit_note do |invoice|
+            invoice.country = 'GB'
+            invoice.tax_rate = 20.0
+            invoice.add_line account_code: '200', amount: 50.0, tax: 10.0
+          end
+
+          # This is an invoice, not a credit note, so should be excluded
+          export.add_invoice do |invoice|
+            invoice.country = 'GB'
+            invoice.tax_rate = 20.0
+            invoice.add_line account_code: '200', amount: 999.0, tax: 199.8
+          end
+
+          @proposal = Proposal.new(export)
+          @credit_note_lines = @proposal.credit_note_lines
+        end
+
+        it 'returns a hash grouped by account, country and tax for credit notes only' do
+          expect(@credit_note_lines[['200', Country.new('GB'), TaxRate.new(20.0, :normal)]][:amount]).to eq 150.0
+          expect(@credit_note_lines[['200', Country.new('GB'), TaxRate.new(20.0, :normal)]][:tax]).to eq 30.0
+        end
+
+        it 'does not include invoices' do
+          expect(@credit_note_lines.size).to eq 1
+        end
+      end
+    end
+
     context '#invoice_line_description' do
       before do
         export = Export.new
