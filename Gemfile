@@ -9,5 +9,6 @@ gem 'rspec'
 gem 'rspec-core'
 gem 'rspec-expectations'
 gem 'rspec-mocks'
-gem 'rubocop'
+gem 'rubocop', require: false
+gem 'rubocop-rspec', require: false
 gem 'webmock'
