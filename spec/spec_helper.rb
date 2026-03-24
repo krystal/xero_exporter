@@ -4,7 +4,7 @@ SPEC_ROOT = __dir__
 $LOAD_PATH.unshift(File.expand_path('../lib', __dir__))
 require 'xero_exporter'
 
-Dir[File.join(SPEC_ROOT, 'support', '**', '*.rb')].sort.each { |path| require path }
+Dir[File.join(SPEC_ROOT, 'support', '**', '*.rb')].each { |path| require path }
 
 RSpec.configure do |config|
   config.color = true

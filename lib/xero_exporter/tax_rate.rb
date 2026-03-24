@@ -8,7 +8,7 @@ module XeroExporter
     attr_reader :name
 
     def initialize(rate, type, name = nil)
-      @rate = rate&.to_f || 0.0
+      @rate = rate.to_f
       @type = type
       @name = name
     end

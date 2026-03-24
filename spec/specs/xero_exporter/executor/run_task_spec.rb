@@ -9,7 +9,7 @@ describe XeroExporter::Executor do
         create_invoice: { state: 'complete', invoice_id: 'existing-inv' }
       }
 
-      executor, state = create_executor(initial_state: initial_state) do |e, api|
+      executor, state = create_executor(initial_state: initial_state) do |e, _api|
         e.add_invoice do |invoice|
           invoice.country = 'GB'
           invoice.tax_rate = 20.0

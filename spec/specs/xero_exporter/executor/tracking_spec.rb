@@ -17,16 +17,16 @@ describe XeroExporter::Executor do
 
         expect(api).to receive(:get).with('TaxRates').and_return({ 'TaxRates' => [] })
 
-        expect(api).to receive(:post).with('TaxRates', anything) do |_, params|
-          { 'TaxRates' => [{ 'TaxType' => 'TAX001' }] }
-        end
+        expect(api).to receive(:post).with('TaxRates', anything).and_return({
+          'TaxRates' => [{ 'TaxType' => 'TAX001' }]
+        })
 
         expect(api).to receive(:get).with('Contacts', anything).and_return({
           'Contacts' => [{ 'ContactID' => 'contact-1' }]
         })
 
-        expect(api).to receive(:post).with('Invoices', anything) do |_, params|
-          tracking = params['LineItems'][0]['Tracking']
+        expect(api).to receive(:post).with('Invoices', anything) do |_, invoice_params|
+          tracking = invoice_params['LineItems'][0]['Tracking']
           expect(tracking).to eq [
             { 'Name' => 'Department', 'Option' => 'Sales' },
             { 'Name' => 'Region', 'Option' => 'EMEA' }
@@ -49,16 +49,16 @@ describe XeroExporter::Executor do
 
         expect(api).to receive(:get).with('TaxRates').and_return({ 'TaxRates' => [] })
 
-        expect(api).to receive(:post).with('TaxRates', anything) do |_, params|
-          { 'TaxRates' => [{ 'TaxType' => 'TAX001' }] }
-        end
+        expect(api).to receive(:post).with('TaxRates', anything).and_return({
+          'TaxRates' => [{ 'TaxType' => 'TAX001' }]
+        })
 
         expect(api).to receive(:get).with('Contacts', anything).and_return({
           'Contacts' => [{ 'ContactID' => 'contact-1' }]
         })
 
-        expect(api).to receive(:post).with('Invoices', anything) do |_, params|
-          expect(params['LineItems'][0]['Tracking']).to eq []
+        expect(api).to receive(:post).with('Invoices', anything) do |_, invoice_params|
+          expect(invoice_params['LineItems'][0]['Tracking']).to eq []
           { 'Invoices' => [{ 'InvoiceID' => 'inv-1', 'AmountDue' => 120.0 }] }
         end
       end

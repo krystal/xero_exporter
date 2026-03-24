@@ -159,7 +159,7 @@ module XeroExporter
         end
 
         logger.debug "Creating payment for invoice #{state[:create_invoice][:invoice_id]} " \
-                        "for #{state[:create_invoice][:amount]}"
+                     "for #{state[:create_invoice][:amount]}"
         logger.debug "Using receivables account: #{@export.receivables_account}"
 
         payment = @api.put('Payments', {
@@ -191,7 +191,7 @@ module XeroExporter
         end
 
         logger.debug "Creating payment for credit note #{state[:create_credit_note][:credit_note_id]} " \
-                        "for #{state[:create_credit_note][:amount]}"
+                     "for #{state[:create_credit_note][:amount]}"
         logger.debug "Using receivables account: #{@export.receivables_account}"
 
         payment = @api.put('Payments', {
@@ -325,24 +325,37 @@ module XeroExporter
         return cached_rate
       end
 
-      existing = tax_rates.find do |rate|
-        rate['Status'] == 'ACTIVE' &&
-          rate['ReportTaxType'] == tax_rate.xero_report_type &&
-          rate['EffectiveRate'].to_d == tax_rate.rate.to_d &&
-          if tax_rate.name
-            rate['Name'] == tax_rate.xero_name(country)
-          elsif country.code
-            rate['Name'].include?(country.name) || rate['Name'].include?(country.code.upcase)
-          else
-            true
-          end
-      end
-
+      existing = find_existing_tax_rate(country, tax_rate)
       if existing
         @tax_rate_cache[[country, tax_rate]] = existing['TaxType']
         return existing['TaxType']
       end
 
+      type = create_tax_rate(country, tax_rate)
+      @tax_rate_cache[[country, tax_rate]] = type
+      type
+    end
+
+    def find_existing_tax_rate(country, tax_rate)
+      tax_rates.find do |rate|
+        rate['Status'] == 'ACTIVE' &&
+          rate['ReportTaxType'] == tax_rate.xero_report_type &&
+          rate['EffectiveRate'].to_d == tax_rate.rate.to_d &&
+          tax_rate_name_matches?(rate, country, tax_rate)
+      end
+    end
+
+    def tax_rate_name_matches?(rate, country, tax_rate)
+      if tax_rate.name
+        rate['Name'] == tax_rate.xero_name(country)
+      elsif country.code
+        rate['Name'].include?(country.name) || rate['Name'].include?(country.code.upcase)
+      else
+        true
+      end
+    end
+
+    def create_tax_rate(country, tax_rate)
       rates = @api.post('TaxRates', {
         'Name' => tax_rate.xero_name(country),
         'ReportTaxType' => tax_rate.xero_report_type,
@@ -354,9 +367,7 @@ module XeroExporter
         ]
       })
 
-      type = rates['TaxRates'].first['TaxType']
-      @tax_rate_cache[[country, tax_rate]] = type
-      type
+      rates['TaxRates'].first['TaxType']
     end
 
     # Return a full list of all tax rates currently stored within the API

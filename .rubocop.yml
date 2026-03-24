@@ -1,8 +1,87 @@
-inherit_from:
-  - https://dev.k.io/rubocop/rubocop.yml
-
 AllCops:
-  TargetRubyVersion: 2.5
+  TargetRubyVersion: 3.0
+  SuggestExtensions: false
+  NewCops: enable
+  Exclude:
+    - "node_modules/**/*"
+
+Style/SymbolArray:
+  EnforcedStyle: brackets
+
+Layout/EmptyLinesAroundClassBody:
+  EnforcedStyle: empty_lines
+
+Style/AccessorGrouping:
+  Enabled: false
+
+Layout/EmptyLinesAroundBlockBody:
+  EnforcedStyle: no_empty_lines
+
+Layout/EmptyLinesAroundModuleBody:
+  EnforcedStyle: empty_lines_except_namespace
+
+Layout/SpaceInLambdaLiteral:
+  EnforcedStyle: require_space
+
+Layout/FirstHashElementIndentation:
+  Enabled: false
+
+Naming/BlockForwarding:
+  EnforcedStyle: explicit
+
+Lint/AssignmentInCondition:
+  Enabled: false
+
+Style/Documentation:
+  Enabled: false
+
+Style/RegexpLiteral:
+  AllowInnerSlashes: true
+
+Style/IfUnlessModifier:
+  Enabled: false
+
+Style/ConditionalAssignment:
+  EnforcedStyle: assign_inside_condition
+  IncludeTernaryExpressions: false
+
+Style/EmptyMethod:
+  EnforcedStyle: expanded
+
+Style/HashSyntax:
+  EnforcedShorthandSyntax: never
+
+Lint/UnusedMethodArgument:
+  AutoCorrect: false
+
+Lint/UnusedBlockArgument:
+  AutoCorrect: false
+
+Naming/AccessorMethodName:
+  Enabled: false
+
+Lint/BooleanSymbol:
+  Enabled: false
+
+Style/SymbolProc:
+  Enabled: false
+
+Metrics/BlockLength:
+  Exclude:
+    - "spec/**/*_spec.rb"
+    - "spec/support/**/*.rb"
+    - "spec/specs/support/**/*.rb"
+
+Metrics/MethodLength:
+  Max: 30
+
+Metrics/ParameterLists:
+  Max: 5
+  CountKeywordArgs: false
+
+Style/MultilineBlockChain:
+  Exclude:
+    - "spec/**/*.rb"
 
 Metrics/ModuleLength:
   Enabled: false
@@ -21,3 +100,10 @@ Lint/MissingSuper:
 
 Metrics/PerceivedComplexity:
   Enabled: false
+
+Naming/PredicateMethod:
+  Enabled: false
+
+Naming/VariableNumber:
+  Exclude:
+    - "spec/**/*_spec.rb"

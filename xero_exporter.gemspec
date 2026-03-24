@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative './lib/xero_exporter/version'
+require_relative 'lib/xero_exporter/version'
 
 Gem::Specification.new do |s|
   s.name          = 'xero_exporter'
@@ -12,7 +12,8 @@ Gem::Specification.new do |s|
   s.require_paths = ['lib']
   s.authors       = ['Adam Cooke']
   s.email         = ['adam@krystal.uk']
-  s.add_runtime_dependency 'json'
-  s.add_runtime_dependency 'logger'
-  s.required_ruby_version = '>= 2.5'
+  s.add_dependency 'json'
+  s.add_dependency 'logger'
+  s.required_ruby_version = '>= 3.0'
+  s.metadata['rubygems_mfa_required'] = 'true'
 end

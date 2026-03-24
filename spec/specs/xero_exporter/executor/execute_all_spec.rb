@@ -25,48 +25,42 @@ describe XeroExporter::Executor do
 
         expect(api).to receive(:get).with('TaxRates').and_return({ 'TaxRates' => [] })
 
-        expect(api).to receive(:post).with('TaxRates', anything) do |_, params|
-          { 'TaxRates' => [{ 'TaxType' => params['Name'] }] }
+        expect(api).to receive(:post).with('TaxRates', anything) do |_, tax_params|
+          { 'TaxRates' => [{ 'TaxType' => tax_params['Name'] }] }
         end
 
         expect(api).to receive(:get).with('Contacts', anything).at_least(:once).and_return({
           'Contacts' => [{ 'ContactID' => 'contact-1' }]
         })
 
-        expect(api).to receive(:post).with('Invoices', anything) do |_, params|
-          {
-            'Invoices' => [{
-              'InvoiceID' => 'inv-1',
-              'AmountDue' => 120.0
-            }]
-          }
-        end
+        expect(api).to receive(:post).with('Invoices', anything).and_return({
+          'Invoices' => [{
+            'InvoiceID' => 'inv-1',
+            'AmountDue' => 120.0
+          }]
+        })
 
-        expect(api).to receive(:put).with('Payments', anything) do |_, params|
-          {
-            'Payments' => [{
-              'PaymentID' => 'pay-1',
-              'Amount' => 120.0
-            }]
-          }
-        end
+        expect(api).to receive(:put).with('Payments', anything).and_return({
+          'Payments' => [{
+            'PaymentID' => 'pay-1',
+            'Amount' => 120.0
+          }]
+        })
 
-        expect(api).to receive(:put).with('BankTransfers', anything) do |_, params|
+        expect(api).to receive(:put).with('BankTransfers', anything) do |_, transfer_params|
           {
             'BankTransfers' => [{
               'BankTransferID' => 'transfer-1',
-              'Amount' => params['Amount']
+              'Amount' => transfer_params['Amount']
             }]
           }
         end
 
-        expect(api).to receive(:post).with('BankTransactions', anything) do |_, params|
-          {
-            'BankTransactions' => [{
-              'BankTransactionID' => 'fee-1'
-            }]
-          }
-        end
+        expect(api).to receive(:post).with('BankTransactions', anything).and_return({
+          'BankTransactions' => [{
+            'BankTransactionID' => 'fee-1'
+          }]
+        })
       end
 
       result = executor.execute_all

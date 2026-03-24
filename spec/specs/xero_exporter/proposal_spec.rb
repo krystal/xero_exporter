@@ -142,19 +142,23 @@ module XeroExporter
       end
 
       it 'includes the country code when present' do
-        expect(@proposal.invoice_line_description('200', Country.new('GB'), TaxRate.new(20.0, :normal))).to eq 'Widgets (GB, 20.0%)'
+        expect(@proposal.invoice_line_description('200', Country.new('GB'),
+                                                  TaxRate.new(20.0, :normal))).to eq 'Widgets (GB, 20.0%)'
       end
 
       it 'omits the country code when absent' do
-        expect(@proposal.invoice_line_description('200', Country.new(nil), TaxRate.new(20.0, :normal))).to eq 'Widgets (20.0%)'
+        expect(@proposal.invoice_line_description('200', Country.new(nil),
+                                                  TaxRate.new(20.0, :normal))).to eq 'Widgets (20.0%)'
       end
 
       it 'uses a default name for unknown account codes' do
-        expect(@proposal.invoice_line_description('999', Country.new('GB'), TaxRate.new(20.0, :normal))).to eq '999 Sales (GB, 20.0%)'
+        expect(@proposal.invoice_line_description('999', Country.new('GB'),
+                                                  TaxRate.new(20.0, :normal))).to eq '999 Sales (GB, 20.0%)'
       end
 
       it 'uses a default name without country for unknown account codes' do
-        expect(@proposal.invoice_line_description('999', Country.new(nil), TaxRate.new(20.0, :normal))).to eq '999 Sales (20.0%)'
+        expect(@proposal.invoice_line_description('999', Country.new(nil),
+                                                  TaxRate.new(20.0, :normal))).to eq '999 Sales (20.0%)'
       end
     end
 

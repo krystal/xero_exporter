@@ -49,8 +49,8 @@ describe XeroExporter::Executor do
 
       executor.add_refunds
       %w[010 011 012].each do |id|
-        expect(state["add_refunds_#{id}".to_sym][:state]).to eq 'complete'
-        expect(state["add_refunds_#{id}".to_sym][:transfer_id]).to eq "transferid-for-#{id}"
+        expect(state[:"add_refunds_#{id}"][:state]).to eq 'complete'
+        expect(state[:"add_refunds_#{id}"][:transfer_id]).to eq "transferid-for-#{id}"
         expect(@logger_string_io.string).to include "Running add_refunds_#{id} task"
       end
 

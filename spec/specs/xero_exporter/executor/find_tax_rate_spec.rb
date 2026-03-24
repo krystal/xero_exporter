@@ -23,8 +23,8 @@ describe XeroExporter::Executor do
           'Contacts' => [{ 'ContactID' => 'contact-1' }]
         })
 
-        expect(api).to receive(:post).with('Invoices', anything) do |_, params|
-          expect(params['LineItems'][0]['TaxType']).to eq 'TAX001'
+        expect(api).to receive(:post).with('Invoices', anything) do |_, invoice_params|
+          expect(invoice_params['LineItems'][0]['TaxType']).to eq 'TAX001'
           { 'Invoices' => [{ 'InvoiceID' => 'inv-1', 'AmountDue' => 120.0 }] }
         end
       end
@@ -52,8 +52,8 @@ describe XeroExporter::Executor do
           'Contacts' => [{ 'ContactID' => 'contact-1' }]
         })
 
-        expect(api).to receive(:post).with('Invoices', anything) do |_, params|
-          expect(params['LineItems'][0]['TaxType']).to eq 'TAX002'
+        expect(api).to receive(:post).with('Invoices', anything) do |_, invoice_params|
+          expect(invoice_params['LineItems'][0]['TaxType']).to eq 'TAX002'
           { 'Invoices' => [{ 'InvoiceID' => 'inv-1', 'AmountDue' => 120.0 }] }
         end
       end
@@ -78,16 +78,16 @@ describe XeroExporter::Executor do
         })
 
         # Should create a new tax rate since the existing one is inactive
-        expect(api).to receive(:post).with('TaxRates', anything) do |_, params|
-          { 'TaxRates' => [{ 'TaxType' => 'NEW_TAX' }] }
-        end
+        expect(api).to receive(:post).with('TaxRates', anything).and_return({
+          'TaxRates' => [{ 'TaxType' => 'NEW_TAX' }]
+        })
 
         expect(api).to receive(:get).with('Contacts', anything).and_return({
           'Contacts' => [{ 'ContactID' => 'contact-1' }]
         })
 
-        expect(api).to receive(:post).with('Invoices', anything) do |_, params|
-          expect(params['LineItems'][0]['TaxType']).to eq 'NEW_TAX'
+        expect(api).to receive(:post).with('Invoices', anything) do |_, invoice_params|
+          expect(invoice_params['LineItems'][0]['TaxType']).to eq 'NEW_TAX'
           { 'Invoices' => [{ 'InvoiceID' => 'inv-1', 'AmountDue' => 120.0 }] }
         end
       end
@@ -111,16 +111,16 @@ describe XeroExporter::Executor do
           ]
         })
 
-        expect(api).to receive(:post).with('TaxRates', anything) do |_, params|
-          { 'TaxRates' => [{ 'TaxType' => 'CORRECT_TAX' }] }
-        end
+        expect(api).to receive(:post).with('TaxRates', anything).and_return({
+          'TaxRates' => [{ 'TaxType' => 'CORRECT_TAX' }]
+        })
 
         expect(api).to receive(:get).with('Contacts', anything).and_return({
           'Contacts' => [{ 'ContactID' => 'contact-1' }]
         })
 
-        expect(api).to receive(:post).with('Invoices', anything) do |_, params|
-          expect(params['LineItems'][0]['TaxType']).to eq 'CORRECT_TAX'
+        expect(api).to receive(:post).with('Invoices', anything) do |_, invoice_params|
+          expect(invoice_params['LineItems'][0]['TaxType']).to eq 'CORRECT_TAX'
           { 'Invoices' => [{ 'InvoiceID' => 'inv-1', 'AmountDue' => 120.0 }] }
         end
       end
@@ -146,17 +146,17 @@ describe XeroExporter::Executor do
         expect(api).to receive(:get).with('TaxRates').and_return({ 'TaxRates' => [] })
 
         # Should only create the tax rate once despite two lines with the same country/rate
-        expect(api).to receive(:post).with('TaxRates', anything).once do |_, params|
-          { 'TaxRates' => [{ 'TaxType' => 'CACHED_TAX' }] }
-        end
+        expect(api).to receive(:post).with('TaxRates', anything).once.and_return({
+          'TaxRates' => [{ 'TaxType' => 'CACHED_TAX' }]
+        })
 
         expect(api).to receive(:get).with('Contacts', anything).and_return({
           'Contacts' => [{ 'ContactID' => 'contact-1' }]
         })
 
-        expect(api).to receive(:post).with('Invoices', anything) do |_, params|
-          expect(params['LineItems'][0]['TaxType']).to eq 'CACHED_TAX'
-          expect(params['LineItems'][1]['TaxType']).to eq 'CACHED_TAX'
+        expect(api).to receive(:post).with('Invoices', anything) do |_, invoice_params|
+          expect(invoice_params['LineItems'][0]['TaxType']).to eq 'CACHED_TAX'
+          expect(invoice_params['LineItems'][1]['TaxType']).to eq 'CACHED_TAX'
           { 'Invoices' => [{ 'InvoiceID' => 'inv-1', 'AmountDue' => 180.0 }] }
         end
       end
