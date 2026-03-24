@@ -13,6 +13,7 @@ module XeroExporter
     attr_writer :country
     attr_writer :tax_rate
     attr_writer :tax_type
+    attr_writer :tax_rate_name
 
     attr_reader :lines
 
@@ -23,7 +24,11 @@ module XeroExporter
     end
 
     def tax_rate
-      TaxRate.new(@tax_rate, @tax_type)
+      if @tax_rate_name && @country
+        raise Error, 'tax_rate_name and country cannot both be set'
+      end
+
+      TaxRate.new(@tax_rate, @tax_type, @tax_rate_name)
     end
 
     def country

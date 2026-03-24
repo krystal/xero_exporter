@@ -329,7 +329,13 @@ module XeroExporter
         rate['Status'] == 'ACTIVE' &&
           rate['ReportTaxType'] == tax_rate.xero_report_type &&
           rate['EffectiveRate'].to_d == tax_rate.rate.to_d &&
-          (rate['Name'].include?(country.name) || rate['Name'].include?(country.code.upcase))
+          if tax_rate.name
+            rate['Name'] == tax_rate.xero_name(country)
+          elsif country.code
+            rate['Name'].include?(country.name) || rate['Name'].include?(country.code.upcase)
+          else
+            true
+          end
       end
 
       if existing

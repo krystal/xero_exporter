@@ -5,10 +5,12 @@ module XeroExporter
 
     attr_reader :rate
     attr_reader :type
+    attr_reader :name
 
-    def initialize(rate, type)
+    def initialize(rate, type, name = nil)
       @rate = rate&.to_f || 0.0
       @type = type
+      @name = name
     end
 
     def to_s
@@ -16,23 +18,35 @@ module XeroExporter
     end
 
     def eql?(other)
-      @rate == other.rate && @type == other.type
+      @rate == other.rate && @type == other.type && @name == other.name
     end
 
     def hash
-      [@rate, @type].hash
+      [@rate, @type, @name].hash
     end
 
     def xero_name(country)
+      return "#{@name} (#{@rate}%)" if @name
+
       case @type
+      when :none
+        "No tax (#{@rate}%)"
       when :moss
         "MOSS #{country.name} #{@rate}%"
       when :reverse_charge
         "Reverse Charge (#{country.code})"
       when :ec_services
-        "EC Services for #{country.code} (#{@rate}%)"
+        if country.code
+          "EC Services for #{country.code} (#{@rate}%)"
+        else
+          "EC Services (#{@rate}%)"
+        end
       else
-        "Tax for #{country.code} (#{@rate}%)"
+        if country.code
+          "Tax for #{country.code} (#{@rate}%)"
+        else
+          "Tax (#{@rate}%)"
+        end
       end
     end
 

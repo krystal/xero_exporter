@@ -62,7 +62,11 @@ module XeroExporter
     # @return [String]
     def invoice_line_description(account, country, tax_rate)
       name = @export.account_names[account.to_s] || "#{account} Sales"
-      "#{name} (#{country.code}, #{tax_rate.rate}%)"
+      if country.code
+        "#{name} (#{country.code}, #{tax_rate.rate}%)"
+      else
+        "#{name} (#{tax_rate.rate}%)"
+      end
     end
 
     private

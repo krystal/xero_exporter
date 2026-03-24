@@ -13,5 +13,6 @@ Gem::Specification.new do |s|
   s.authors       = ['Adam Cooke']
   s.email         = ['adam@krystal.uk']
   s.add_runtime_dependency 'json'
+  s.add_runtime_dependency 'logger'
   s.required_ruby_version = '>= 2.5'
 end

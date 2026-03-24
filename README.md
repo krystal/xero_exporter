@@ -38,7 +38,8 @@ export.invoice_contact_name = 'Generic Customer'
 # the export. It's important to ensure that you categorise the tax
 # element on this as that forms a key part of the export.
 export.add_invoice do |invoice|
-  # Specify the country code for this invoice
+  # Specify the country code for this invoice (optional - can be
+  # omitted if the tax rate is not country-specific)
   invoice.country = 'GB'
 
   # Specify the tax rate that was charged for this invoice
@@ -54,6 +55,23 @@ export.add_invoice do |invoice|
   # and the amount of tax you calculated for that line.
   invoice.add_line account_code: '200', amount: 100.0, tax: 20.0
   invoice.add_line account_code: '205', amount: 100.0, tax: 20.0
+end
+
+# If the invoice doesn't have a country-specific tax rate, you can
+# omit the country entirely.
+export.add_invoice do |invoice|
+  invoice.tax_rate = 10.0
+  invoice.add_line account_code: '200', amount: 50.0, tax: 5.0
+end
+
+# You can also specify a custom tax rate name instead of a country.
+# This will be used as the tax rate name in Xero (with the rate
+# appended automatically, e.g. "Sales Tax (10.0%)"). Note: you
+# cannot set both a country and a custom tax rate name.
+export.add_invoice do |invoice|
+  invoice.tax_rate = 10.0
+  invoice.tax_rate_name = 'Sales Tax'
+  invoice.add_line account_code: '200', amount: 50.0, tax: 5.0
 end
 
 # Additionally, you can also add credit notes in exactly the same

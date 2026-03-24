@@ -18,6 +18,8 @@ module XeroExporter
     end
 
     def name
+      return nil if @code.nil?
+
       CODES_TO_NAMES[@code.upcase] || @code.upcase
     end
 

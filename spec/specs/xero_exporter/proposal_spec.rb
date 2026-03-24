@@ -62,6 +62,63 @@ module XeroExporter
       end
     end
 
+    context 'with invoices without a country' do
+      before do
+        export = Export.new
+
+        export.add_invoice do |invoice|
+          invoice.tax_rate = 20.0
+          invoice.add_line account_code: '200', amount: 100.0, tax: 20.0
+        end
+
+        export.add_invoice do |invoice|
+          invoice.tax_rate = 20.0
+          invoice.add_line account_code: '200', amount: 50.0, tax: 10.0
+        end
+
+        export.add_invoice do |invoice|
+          invoice.country = 'GB'
+          invoice.tax_rate = 20.0
+          invoice.add_line account_code: '200', amount: 200.0, tax: 40.0
+        end
+
+        @proposal = Proposal.new(export)
+        @invoice_lines = @proposal.invoice_lines
+      end
+
+      it 'groups country-less invoices separately from those with a country' do
+        expect(@invoice_lines[['200', Country.new(nil), TaxRate.new(20.0, :normal)]][:amount]).to eq 150.0
+        expect(@invoice_lines[['200', Country.new(nil), TaxRate.new(20.0, :normal)]][:tax]).to eq 30.0
+
+        expect(@invoice_lines[['200', Country.new('GB'), TaxRate.new(20.0, :normal)]][:amount]).to eq 200.0
+        expect(@invoice_lines[['200', Country.new('GB'), TaxRate.new(20.0, :normal)]][:tax]).to eq 40.0
+      end
+    end
+
+    context '#invoice_line_description' do
+      before do
+        export = Export.new
+        export.account_names['200'] = 'Widgets'
+        @proposal = Proposal.new(export)
+      end
+
+      it 'includes the country code when present' do
+        expect(@proposal.invoice_line_description('200', Country.new('GB'), TaxRate.new(20.0, :normal))).to eq 'Widgets (GB, 20.0%)'
+      end
+
+      it 'omits the country code when absent' do
+        expect(@proposal.invoice_line_description('200', Country.new(nil), TaxRate.new(20.0, :normal))).to eq 'Widgets (20.0%)'
+      end
+
+      it 'uses a default name for unknown account codes' do
+        expect(@proposal.invoice_line_description('999', Country.new('GB'), TaxRate.new(20.0, :normal))).to eq '999 Sales (GB, 20.0%)'
+      end
+
+      it 'uses a default name without country for unknown account codes' do
+        expect(@proposal.invoice_line_description('999', Country.new(nil), TaxRate.new(20.0, :normal))).to eq '999 Sales (20.0%)'
+      end
+    end
+
     context '#payments' do
       context 'with an example set of data' do
         before do

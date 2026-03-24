@@ -73,7 +73,7 @@ describe XeroExporter::Executor do
           expect(params['LineItems'][2]['TaxAmount']).to eq 0.0
           expect(params['LineItems'][2]['Description']).to eq '205 Sales (US, 0.0%)'
           expect(params['LineItems'][2]['LineAmount']).to eq 250.0
-          expect(params['LineItems'][2]['TaxType']).to eq 'Tax for US (0.0%)'
+          expect(params['LineItems'][2]['TaxType']).to eq 'No tax (0.0%)'
 
           # Return our new invoice object
           {
@@ -94,6 +94,139 @@ describe XeroExporter::Executor do
       expect(@logger_string_io.string).to include 'Creating new invoice'
       expect(@logger_string_io.string).to include 'Found existing contact with name: Example Customer'
       expect(@logger_string_io.string).to include 'Invoice created with ID abcdef for 491.0'
+    end
+
+    it 'should create an invoice with lines that have no country' do
+      executor, state = create_executor do |e, api|
+        e.add_invoice do |invoice|
+          invoice.tax_rate = 20.0
+          invoice.add_line account_code: '200', amount: 100, tax: 20
+        end
+
+        e.add_invoice do |invoice|
+          invoice.country = 'DE'
+          invoice.tax_rate = 21.0
+          invoice.add_line account_code: '200', amount: 50, tax: 10.5
+        end
+
+        expect(api).to receive(:get).with('TaxRates').and_return({ 'TaxRates' => [] })
+
+        expect(api).to receive(:post).with('TaxRates', anything).at_least(:once) do |_, params|
+          {
+            'TaxRates' => [{ 'TaxType' => params['Name'] }]
+          }
+        end
+
+        expect(api).to receive(:get).with('Contacts', anything).and_return({
+          'Contacts' => [{ 'ContactID' => 'abcdef' }]
+        })
+
+        expect(api).to receive(:post).with('Invoices', anything) do |_, params|
+          expect(params['LineItems'].count).to eq 2
+
+          # Line without country
+          expect(params['LineItems'][0]['Description']).to eq 'Widgets (20.0%)'
+          expect(params['LineItems'][0]['TaxType']).to eq 'Tax (20.0%)'
+          expect(params['LineItems'][0]['TaxAmount']).to eq 20.0
+          expect(params['LineItems'][0]['LineAmount']).to eq 100.0
+
+          # Line with country
+          expect(params['LineItems'][1]['Description']).to eq 'Widgets (DE, 21.0%)'
+          expect(params['LineItems'][1]['TaxType']).to eq 'Tax for DE (21.0%)'
+          expect(params['LineItems'][1]['TaxAmount']).to eq 10.5
+          expect(params['LineItems'][1]['LineAmount']).to eq 50.0
+
+          {
+            'Invoices' => [{
+              'InvoiceID' => 'no-country-test',
+              'AmountDue' => params['LineItems'].sum { |li| li['TaxAmount'] + li['LineAmount'] }
+            }]
+          }
+        end
+      end
+
+      executor.create_invoice
+      expect(state[:create_invoice][:state]).to eq 'complete'
+      expect(state[:create_invoice][:invoice_id]).to eq 'no-country-test'
+    end
+
+    it 'should create an invoice with a custom tax rate name' do
+      executor, state = create_executor do |e, api|
+        e.add_invoice do |invoice|
+          invoice.tax_rate = 15.0
+          invoice.tax_rate_name = 'Sales Tax'
+          invoice.add_line account_code: '200', amount: 200, tax: 30
+        end
+
+        expect(api).to receive(:get).with('TaxRates').and_return({ 'TaxRates' => [] })
+
+        expect(api).to receive(:post).with('TaxRates', anything).at_least(:once) do |_, params|
+          expect(params['Name']).to eq 'Sales Tax (15.0%)'
+          {
+            'TaxRates' => [{ 'TaxType' => params['Name'] }]
+          }
+        end
+
+        expect(api).to receive(:get).with('Contacts', anything).and_return({
+          'Contacts' => [{ 'ContactID' => 'abcdef' }]
+        })
+
+        expect(api).to receive(:post).with('Invoices', anything) do |_, params|
+          expect(params['LineItems'].count).to eq 1
+          expect(params['LineItems'][0]['Description']).to eq 'Widgets (15.0%)'
+          expect(params['LineItems'][0]['TaxType']).to eq 'Sales Tax (15.0%)'
+          expect(params['LineItems'][0]['TaxAmount']).to eq 30.0
+          expect(params['LineItems'][0]['LineAmount']).to eq 200.0
+
+          {
+            'Invoices' => [{
+              'InvoiceID' => 'custom-name-test',
+              'AmountDue' => 230.0
+            }]
+          }
+        end
+      end
+
+      executor.create_invoice
+      expect(state[:create_invoice][:state]).to eq 'complete'
+      expect(state[:create_invoice][:invoice_id]).to eq 'custom-name-test'
+    end
+
+    it 'should find an existing tax rate by custom name' do
+      executor, state = create_executor do |e, api|
+        e.add_invoice do |invoice|
+          invoice.tax_rate = 15.0
+          invoice.tax_rate_name = 'Sales Tax'
+          invoice.add_line account_code: '200', amount: 200, tax: 30
+        end
+
+        expect(api).to receive(:get).with('TaxRates').and_return({
+          'TaxRates' => [
+            { 'Name' => 'Sales Tax (15.0%)', 'Status' => 'ACTIVE', 'ReportTaxType' => 'OUTPUT',
+              'EffectiveRate' => '15.0', 'TaxType' => 'EXISTING_TYPE' },
+            { 'Name' => 'Other Tax (15.0%)', 'Status' => 'ACTIVE', 'ReportTaxType' => 'OUTPUT',
+              'EffectiveRate' => '15.0', 'TaxType' => 'WRONG_TYPE' }
+          ]
+        })
+
+        expect(api).to receive(:get).with('Contacts', anything).and_return({
+          'Contacts' => [{ 'ContactID' => 'abcdef' }]
+        })
+
+        expect(api).to receive(:post).with('Invoices', anything) do |_, params|
+          expect(params['LineItems'][0]['TaxType']).to eq 'EXISTING_TYPE'
+
+          {
+            'Invoices' => [{
+              'InvoiceID' => 'existing-rate-test',
+              'AmountDue' => 230.0
+            }]
+          }
+        end
+      end
+
+      executor.create_invoice
+      expect(state[:create_invoice][:state]).to eq 'complete'
     end
 
     it 'should not create an invoice if there are no lines' do

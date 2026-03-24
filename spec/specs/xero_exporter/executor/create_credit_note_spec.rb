@@ -70,7 +70,7 @@ describe XeroExporter::Executor do
           expect(params['LineItems'][2]['Quantity']).to eq 1
           expect(params['LineItems'][2]['TaxAmount']).to eq 0.0
           expect(params['LineItems'][2]['LineAmount']).to eq 250.0
-          expect(params['LineItems'][2]['TaxType']).to eq 'Tax for US (0.0%)'
+          expect(params['LineItems'][2]['TaxType']).to eq 'No tax (0.0%)'
 
           # Return our new invoice object
           {
